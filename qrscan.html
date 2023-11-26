@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QR Code Scanner</title>
+  </head>
+  <body>
+    <video id="scanner" style="width: 100%"></video>
+    <script>
+      const videoElement = document.getElementById("scanner");
+
+      async function startScanner() {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+          });
+          videoElement.srcObject = stream;
+
+          const track = stream.getVideoTracks()[0];
+          const imageCapture = new ImageCapture(track);
+
+          const qrScanner = new QrScanner(videoElement, (result) => {
+            alert(`Scanned: ${result}`);
+            qrScanner.stop();
+            track.stop();
+          });
+
+          qrScanner.start();
+        } catch (error) {
+          console.error("Error accessing camera:", error);
+        }
+      }
+
+      startScanner();
+    </script>
+    <script src="https://cdn.rawgit.com/cozmo/jsQR/master/dist/jsQR.js"></script>
+    <script src="https://cdn.rawgit.com/sitepoint-editors/jsqrcode/v0.0.6/dist/jsqrcode.min.js"></script>
+    <script src="https://rawgit.com/sitepoint-editors/jsqrcode/v0.0.6/src/qr_packed.js"></script>
+    <script src="https://rawgit.com/cozmo/jsQR/master/dist/jsQR.js"></script>
+    <script src="https://cdn.rawgit.com/sitepoint-editors/jsqrcode/master/dist/jsqrcode.min.js"></script>
+  </body>
+</html>

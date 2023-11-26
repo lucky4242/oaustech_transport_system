@@ -1,0 +1,158 @@
+<?php
+require("main/conn.php");
+if (!isset($_SESSION['UserID'])) {
+    header("location:login.php");
+    exit();
+}
+$sessionID = $_SESSION['UserID'];
+$query1 = mysqli_query($conn,"SELECT*FROM userinfo WHERE UserID='$sessionID'");
+if (mysqli_num_rows($query1)==0) {
+    header("location:login.php");
+    exit();
+}
+$userinfo = mysqli_fetch_assoc($query1);
+$userid = $userinfo['UserID'];
+
+if (isset($_POST['deposit'])) {
+    $amount =  $_POST['amount'];
+    $url = "https://api.paystack.co/transaction/initialize";
+
+    $fields = [
+      'email' => $userinfo['Email'],
+      'amount' => $amount."00"
+    ];
+  
+    $fields_string = http_build_query($fields);
+  
+    //open connection
+    $ch = curl_init();
+    
+    //set the url, number of POST vars, POST data
+    curl_setopt($ch,CURLOPT_URL, $url);
+    curl_setopt($ch,CURLOPT_POST, true);
+    curl_setopt($ch,CURLOPT_POSTFIELDS, $fields_string);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+      "Authorization: Bearer sk_test_70ba19aa88cf50d330a834c4e7c716c961f7e227",
+      "Cache-Control: no-cache",
+    ));
+    
+    //So that curl_exec returns the contents of the cURL; rather than echoing it
+    curl_setopt($ch,CURLOPT_RETURNTRANSFER, true); 
+    
+    //execute post
+    $result = curl_exec($ch);
+    $result = json_decode($result);
+    if (isset($result->data->reference)) {
+        $ref=$result->data->reference;
+        $query2 = mysqli_query($conn,"INSERT INTO fund(UserID,Amount,PaystackID)VALUES('$userid','$amount','$ref')");
+        if($query2){
+            header("location:".$result->data->authorization_url);
+            exit();
+        }
+    }
+
+}
+
+
+
+?>
+<!doctype html>
+<html class="no-js" lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>Junko - login</title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Favicon -->
+    <link rel="shortcut icon" type="image/x-icon" href="assets/img/favicon.ico">
+
+    <!-- CSS 
+    ========================= -->
+
+
+    <!-- Plugins CSS -->
+    <link rel="stylesheet" href="assets/css/plugins.css">
+
+    <!-- Main Style CSS -->
+    <link rel="stylesheet" href="assets/css/style.css">
+
+</head>
+
+<body>
+
+    <?php
+    if (isset($_SESSION['UserID'])) {
+        include("main/header2.php");
+    }else{
+        include("main/header1.php");
+    }
+
+    ?>
+
+    <!--breadcrumbs area start-->
+    <div class="breadcrumbs_area">
+        <div class="container">
+            <div class="row">
+                <div class="col-12">
+                    <div class="breadcrumb_content">
+                        <ul>
+                            <li><a href="index.php">home</a></li>
+                            <li>Deposit</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--breadcrumbs area end-->
+
+    <!-- customer login start -->
+    <div class="customer_login mt-60">
+        <div class="container">
+            <div class="row">
+                <!--login area start-->
+                <div class="col-lg-3 col-md-3">
+                    
+                </div>
+                <!--login area start-->
+
+                <!--register area start-->
+                <div class="col-lg-6 col-md-6">
+                    <div class="account_form register">
+                        <h2>Fund your wallet</h2>
+                        
+                        <form action="" method="post">
+                            <p>
+                                <label>Amout to fund</label>
+                                <input type="number" min="1000" name="amount" required>
+                            </p>
+                            <div class="login_submit">
+                            <center>  
+                                    <button type="submit" name="deposit">Deposit</button>
+                            </center>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <!--register area end-->
+            </div>
+        </div>
+    </div>
+    <!-- customer login end -->
+    <?php include("main/footer.php");?>
+
+    <!-- JS
+============================================ -->
+
+    <!-- Plugins JS -->
+    <script src="assets/js/plugins.js"></script>
+
+    <!-- Main JS -->
+    <script src="assets/js/main.js"></script>
+
+
+
+</body>
+</html>
